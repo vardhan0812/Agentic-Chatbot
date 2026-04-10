@@ -6,11 +6,13 @@ from src.langgraphagenticai.tools.search_tool import create_tool_node
 from langgraph.prebuilt import tools_condition
 from src.langgraphagenticai.nodes.chatbot_with_tool_node import ChatbotWithToolNode 
 from src.langgraphagenticai.nodes.ai_news_node import AINewsNode
+from langgraph.checkpoint.memory import MemorySaver
 
 class GraphBuilder:
-    def __init__(self,model):
+    def __init__(self,model,memory):
         self.llm = model
         self.graph_builder = StateGraph(State)
+        self.memory = memory
 
     def basic_chatbot_build_graph(self):
         """Builds a chatbot using langgraph"""
@@ -67,4 +69,4 @@ class GraphBuilder:
         if usecase == "AI News":
             self.ai_news_builder_graph()
 
-        return self.graph_builder.compile()
+        return self.graph_builder.compile(checkpointer=self.memory)

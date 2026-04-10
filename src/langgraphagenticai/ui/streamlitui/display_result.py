@@ -1,38 +1,56 @@
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 import json
+import time
 
 
 class DisplayResultStreamlit:
-    def __init__(self, usecase, graph, user_message):
+    def __init__(self, usecase, graph, user_message,config):
         self.usecase = usecase
         self.graph = graph
         self.user_message = user_message
+        self.config = config
+
+    def _typewriter(self, text, delay=0.012):
+        placeholder = st.empty()
+        typed_text = ""
+
+        for char in text:
+            typed_text += char
+            placeholder.markdown(typed_text + "▌")
+            time.sleep(delay)
+
+        placeholder.markdown(typed_text)
 
     def display_result_on_ui(self):
         usecase = self.usecase
         graph = self.graph
         user_message = self.user_message
+        config = self.config
 
         if usecase == "Chatbot":
-            for event in graph.stream({"messages": ("user", user_message)}):
+            assistant_reply = None
+
+            for event in graph.stream({"messages": ("user", user_message)}, config=config):
                 print(event.values())
                 for value in event.values():
                     print(value["messages"])
-                    with st.chat_message("user"):
-                        st.write(user_message)
+                    assistant_reply = value["messages"].content
 
-                    with st.chat_message("assistant"):
-                        st.write(value["messages"].content)
+            if assistant_reply:
+                st.session_state.chat_history.append({"role": "assistant", "content": assistant_reply})
+                with st.chat_message("assistant"):
+                    self._typewriter(assistant_reply)
+
+                    
         elif usecase == "Chatbot With Web":
             # Prepare state and invoke the graph
-            initial_state = {"messages": [user_message]}
-            res = graph.invoke(initial_state)
+            initial_state = {"messages": [("user", user_message)]}
+            res = graph.invoke(initial_state,config=config)
 
             for message in res["messages"]:
                 if type(message) == HumanMessage:
-                    with st.chat_message("user"):
-                        st.write(message.content)
+                    continue
 
                 elif type(message) == ToolMessage:
                     with st.chat_message("ai"):
@@ -41,8 +59,9 @@ class DisplayResultStreamlit:
                         st.write("Tool Call End")
 
                 elif type(message) == AIMessage and message.content:
+                    st.session_state.chat_history.append({"role": "assistant", "content": message.content})
                     with st.chat_message("assistant"):
-                        st.write(message.content)
+                        self._typewriter(message.content)
 
         elif usecase == "AI News":
             frequency = self.user_message
