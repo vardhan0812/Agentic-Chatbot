@@ -23,10 +23,23 @@ def load_langgraph_agenticai_app():
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+
+    if "active_usecase" not in st.session_state:
+        st.session_state.active_usecase = None
+
+    current_usecase = user_input.get("selected_usecase") if user_input else None
+    if current_usecase != st.session_state.active_usecase:
+        st.session_state.active_usecase = current_usecase
+        st.session_state.chat_history = []
+        st.session_state.thread_id = str(uuid.uuid4())
+        st.session_state.memory = MemorySaver()
+        st.session_state.IsFetchButtonClicked = False
+        st.session_state.timeframe = ""
     
-    for message in st.session_state.chat_history:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
+    if current_usecase in {"Chatbot", "Chatbot With Web"}:
+        for message in st.session_state.chat_history:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
 
     if not user_input:
         return st.error("Error: Failed to load user input from the UI")
@@ -38,9 +51,10 @@ def load_langgraph_agenticai_app():
 
     if user_message:
         try:
-            st.session_state.chat_history.append({"role": "user", "content": user_message})
-            with st.chat_message("user"):
-                st.write(user_message)
+            if current_usecase in {"Chatbot", "Chatbot With Web"}:
+                st.session_state.chat_history.append({"role": "user", "content": user_message})
+                with st.chat_message("user"):
+                    st.write(user_message)
             obj_llm_config = GROQLLM(user_controls_input = user_input)
             model = obj_llm_config.get_llm_models()
 
@@ -49,7 +63,7 @@ def load_langgraph_agenticai_app():
                 return
             
             #Intialise the graph based on usecases
-            usecase = user_input.get("selected_usecase")
+            usecase = current_usecase
 
             #graph builder
             graph_builder = GraphBuilder(model,st.session_state.memory)

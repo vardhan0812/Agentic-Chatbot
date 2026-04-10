@@ -47,26 +47,27 @@ class DisplayResultStreamlit:
             # Prepare state and invoke the graph
             initial_state = {"messages": [("user", user_message)]}
             res = graph.invoke(initial_state,config=config)
+            latest_assistant_reply = None
 
             for message in res["messages"]:
                 if type(message) == HumanMessage:
                     continue
 
                 elif type(message) == ToolMessage:
-                    with st.chat_message("ai"):
-                        st.write("Tool Call Start")
-                        st.write(message.content)
-                        st.write("Tool Call End")
+                    continue
 
                 elif type(message) == AIMessage and message.content:
-                    st.session_state.chat_history.append({"role": "assistant", "content": message.content})
-                    with st.chat_message("assistant"):
-                        self._typewriter(message.content)
+                    latest_assistant_reply = message.content
+
+            if latest_assistant_reply:
+                st.session_state.chat_history.append({"role": "assistant", "content": latest_assistant_reply})
+                with st.chat_message("assistant"):
+                    self._typewriter(latest_assistant_reply)
 
         elif usecase == "AI News":
             frequency = self.user_message
             with st.spinner("Fetching and summarizing news...⏳"):
-                result = graph.invoke({"messages": frequency})
+                result = graph.invoke({"messages": frequency}, config=config)
                 try:
                     # Read the markdown file
                     AI_NEWS_PATH = f"./AINews/{frequency.lower()}_summary.md"

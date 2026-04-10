@@ -87,8 +87,10 @@ class LoadStreamlitUI:
             """,
             unsafe_allow_html=True,
         )
-        st.session_state.timeframe = ""
-        st.session_state.IsFetchButtonClicked = False
+        if "timeframe" not in st.session_state:
+            st.session_state.timeframe = ""
+        if "IsFetchButtonClicked" not in st.session_state:
+            st.session_state.IsFetchButtonClicked = False
 
         with st.sidebar:
             llm_options = self.config.get_llm_options()
