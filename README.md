@@ -1,4 +1,4 @@
-# End-to-End Agentic Chatbot
+# End-to-End Agentic AI Chatbot
 
 This project is a Streamlit-based LangGraph app that supports three use cases:
 

@@ -2,6 +2,7 @@ import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 import json
 import time
+import uuid
 
 
 class DisplayResultStreamlit:
@@ -67,7 +68,10 @@ class DisplayResultStreamlit:
         elif usecase == "AI News":
             frequency = self.user_message
             with st.spinner("Fetching and summarizing news...⏳"):
-                result = graph.invoke({"messages": frequency}, config=config)
+                result = graph.invoke(
+                    {"messages": [("user", frequency)]},
+                    config={"configurable": {"thread_id": str(uuid.uuid4())}},
+                )
                 try:
                     # Read the markdown file
                     AI_NEWS_PATH = f"./AINews/{frequency.lower()}_summary.md"
